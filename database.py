@@ -1,26 +1,38 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import sqlite3
 
 from config import DATABASE_FILE
-from models import Base
-
-DATABASE_URL = f"sqlite:///{DATABASE_FILE}"
-
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    future=True,
-)
-
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False,
-)
 
 
-def init_database():
-    """
-    Erstellt alle Tabellen, falls sie noch nicht existieren.
-    """
-    Base.metadata.create_all(bind=engine)
+class Database:
+
+    def __init__(self):
+        self.conn = sqlite3.connect(
+            DATABASE_FILE,
+            check_same_thread=False
+        )
+
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS register_current (
+            register INTEGER PRIMARY KEY,
+            raw INTEGER,
+            signed INTEGER,
+            scaled REAL,
+            updated TEXT
+        )
+        """)
+
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS register_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            register INTEGER,
+            raw INTEGER,
+            signed INTEGER,
+            scaled REAL
+        )
+        """)
+
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
