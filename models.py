@@ -4,18 +4,12 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import Float
 from sqlalchemy import Integer
-from sqlalchemy import String
-
 from sqlalchemy.orm import declarative_base
-
 
 Base = declarative_base()
 
 
 class RegisterCurrent(Base):
-    """
-    Enthält immer den aktuellsten Wert eines Registers.
-    """
 
     __tablename__ = "register_current"
 
@@ -36,9 +30,6 @@ class RegisterCurrent(Base):
 
 
 class RegisterHistory(Base):
-    """
-    Historie aller Änderungen.
-    """
 
     __tablename__ = "register_history"
 
@@ -57,20 +48,3 @@ class RegisterHistory(Base):
     signed = Column(Integer, nullable=False)
 
     scaled = Column(Float, nullable=False)
-
-
-class RegisterInfo(Base):
-    """
-    Beschreibung eines Registers.
-    Wird später automatisch oder manuell gepflegt.
-    """
-
-    __tablename__ = "register_info"
-
-    register = Column(Integer, primary_key=True)
-
-    name = Column(String(100))
-
-    unit = Column(String(20))
-
-    description = Column(String(500))

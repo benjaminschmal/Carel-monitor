@@ -3,13 +3,13 @@ from pymodbus.client import ModbusTcpClient
 from config import (
     MODBUS_HOST,
     MODBUS_PORT,
-    MODBUS_UNIT_ID,
+    MODBUS_SLAVE,
     REGISTER_START,
     REGISTER_END,
 )
 
 
-class CarelClient:
+class ModbusClient:
 
     def __init__(self):
 
@@ -26,7 +26,7 @@ class CarelClient:
 
         self.client.close()
 
-    def read_registers(self):
+    def read_all(self):
 
         registers = {}
 
@@ -42,24 +42,22 @@ class CarelClient:
             result = self.client.read_holding_registers(
                 address=start,
                 count=count,
-                slave=MODBUS_UNIT_ID,
+                slave=MODBUS_SLAVE,
             )
 
             if result.isError():
                 raise RuntimeError(result)
 
-            for offset, value in enumerate(result.registers):
+            for offset, raw in enumerate(result.registers):
 
                 register = start + offset
 
-                signed = value if value < 32768 else value - 65536
-
-                scaled = signed / 10
+                signed = raw if raw < 32768 else raw - 65536
 
                 registers[register] = {
-                    "raw": value,
+                    "raw": raw,
                     "signed": signed,
-                    "scaled": scaled,
+                    "scaled": signed / 10,
                 }
 
             start += count

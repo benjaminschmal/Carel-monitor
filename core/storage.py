@@ -1,25 +1,22 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Session
-
+from database import SessionLocal
 from models import RegisterCurrent
 from models import RegisterHistory
 
 
 class Storage:
 
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self):
 
-    def save_register(
-        self,
-        register: int,
-        raw: int,
-        signed: int,
-        scaled: float,
-    ):
+        self.session = SessionLocal()
 
-        current = self.session.get(RegisterCurrent, register)
+    def save(self, register, raw, signed, scaled):
+
+        current = self.session.get(
+            RegisterCurrent,
+            register,
+        )
 
         if current is None:
 
@@ -40,15 +37,24 @@ class Storage:
             current.scaled = scaled
             current.updated = datetime.now()
 
-        history = RegisterHistory(
-            timestamp=datetime.now(),
-            register=register,
-            raw=raw,
-            signed=signed,
-            scaled=scaled,
+        self.session.add(
+
+            RegisterHistory(
+
+                timestamp=datetime.now(),
+
+                register=register,
+
+                raw=raw,
+
+                signed=signed,
+
+                scaled=scaled,
+
+            )
+
         )
 
-        self.session.add(history)
-
     def commit(self):
+
         self.session.commit()

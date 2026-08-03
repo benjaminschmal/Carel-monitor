@@ -1,6 +1,6 @@
 from database import init_database
 
-print("Erzeuge Datenbank...")
+print("Initialisiere Datenbank...")
 
 init_database()
 
