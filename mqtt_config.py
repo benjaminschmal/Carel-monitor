@@ -1,13 +1,14 @@
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass(frozen=True)
 class MqttConfig:
-    host: str | None
+    host: Optional[str]
     port: int
-    username: str | None
-    password: str | None
+    username: Optional[str]
+    password: Optional[str]
     base_topic: str
 
     @property
