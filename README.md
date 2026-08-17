@@ -18,9 +18,9 @@ The project also publishes **Home Assistant MQTT Discovery** configuration so ma
 - Home Assistant MQTT Discovery
 - Discovery only for registers that are explicitly mapped
 - Environment-based configuration
-- Docker-ready deployment
+- Docker deployment
 
-The monitor has been tested against a real CAREL controller.
+The monitor has been tested against a real CAREL controller and deployed successfully on a QNAP NAS.
 
 ## Current register mapping
 
@@ -125,10 +125,9 @@ Webserver configuration:
 
 Other configuration:
 
-- `DATA_DIR`
 - `LOG_LEVEL`
 
-The actual network addresses and credentials are not stored in the repository.
+The actual network addresses, MAC addresses and credentials are not stored in the repository.
 
 ## Local development
 
@@ -138,28 +137,17 @@ Install the Python dependencies:
 python3 -m pip install -r requirements.txt
 ```
 
-Set the CAREL controller address:
+Copy the example configuration and adjust it for your environment:
 
 ```bash
-export CAREL_HOST=192.168.1.x
+cp .env.example .env
 ```
 
-Set MQTT configuration if MQTT should be enabled:
-
-```bash
-export MQTT_HOST=192.168.1.x
-export MQTT_PORT=1883
-export MQTT_USERNAME=mqtt
-export MQTT_PASSWORD=<password>
-```
-
-Start the complete application:
+Set the required CAREL and MQTT values in `.env`, then start the complete application:
 
 ```bash
 python3 main.py
 ```
-
-The application starts the web dashboard and the CAREL scanner together.
 
 The dashboard is available on:
 
@@ -167,40 +155,50 @@ The dashboard is available on:
 http://localhost:8000
 ```
 
-## Docker
+## Docker image
 
-The project is prepared for Docker deployment.
+Build the image:
 
-The container runs the same `main.py` entry point used during local development, so the web dashboard and CAREL scanner run together.
-
-The SQLite data directory should be mounted as a persistent volume so historical data survives container recreation.
-
-Example runtime configuration:
-
-```text
-CAREL_HOST=192.168.1.x
-CAREL_PORT=502
-CAREL_SLAVE=1
-CAREL_TIMEOUT=3
-SCAN_INTERVAL=5
-
-MQTT_HOST=192.168.1.x
-MQTT_PORT=1883
-MQTT_USERNAME=mqtt
-MQTT_PASSWORD=<password>
-MQTT_BASE_TOPIC=carel/monitor
+```bash
+docker build -t carel-monitor:latest .
 ```
 
-Do not commit real passwords, private network details or other credentials to the repository.
+The container exposes the web dashboard on port `8000`.
+
+## QNAP deployment
+
+The production test environment uses QNAP Container Station with a direct QNAP `qnet` network.
+
+The container is created directly with `docker create`, rather than as a Docker Compose application. The IP address is assigned by DHCP and the container uses a fixed MAC address so the DHCP lease can remain stable.
+
+Example:
+
+```bash
+docker create \
+  --name carel-monitor-1 \
+  --network qnet-dhcp-bond0-6d6da6 \
+  --mac-address <container-mac> \
+  -p 8000:8000 \
+  --env-file /share/Container/Carel-monitor/.env \
+  -v /share/Container/Carel-monitor/data:/app/data \
+  carel-monitor:latest
+```
+
+Then start it with:
+
+```bash
+docker start carel-monitor-1
+```
+
+The real QNAP network name, MAC address, IP address and MQTT credentials are intentionally not part of the repository.
+
+The persistent `/app/data` volume keeps the SQLite database when the container is recreated.
 
 ## Project structure
 
 ```text
 Carel-monitor/
 ├── core/
-│   ├── modbus_client.py
-│   ├── scanner.py
-│   └── storage.py
 ├── static/
 ├── templates/
 ├── test/
@@ -214,7 +212,6 @@ Carel-monitor/
 ├── register_config.py
 ├── requirements.txt
 ├── Dockerfile
-├── docker-compose.yml
 └── .env.example
 ```
 
@@ -228,10 +225,13 @@ Current implementation status:
 - Web dashboard: working
 - MQTT publishing: working
 - Home Assistant MQTT Discovery: working
-- Docker deployment: prepared, not yet validated on the QNAP
+- Docker image: working
+- QNAP deployment: successfully tested
 
 ## Development notes
 
 The project is developed and tested locally first. Deployment to the QNAP is performed separately using Docker.
 
 Register mappings are intentionally added only when the meaning of a CAREL register is known. This prevents unknown register values from being presented as misleading Home Assistant entities.
+
+Network addresses, MAC addresses, passwords and other private deployment details must remain outside the public repository.
