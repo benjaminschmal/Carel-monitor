@@ -1,6 +1,8 @@
 import time
 
 from config import SCAN_INTERVAL
+from mqtt_client import MqttClient
+from mqtt_config import MqttConfig
 
 from core.modbus_client import ModbusClient
 from core.storage import Storage
@@ -14,6 +16,10 @@ class Scanner:
 
         self.storage = Storage()
 
+        self.mqtt = MqttClient(
+            MqttConfig.from_environment()
+        )
+
         self.last = {}
 
     def run(self):
@@ -26,46 +32,68 @@ class Scanner:
 
         print("✅ Verbunden")
 
-        while True:
+        mqtt_enabled = self.mqtt.config.enabled
 
-            registers = self.client.read_all()
+        if mqtt_enabled:
+            if self.mqtt.connect():
+                print("📡 MQTT verbunden")
+            else:
+                print("⚠️ MQTT nicht verfügbar – Scanner läuft weiter")
 
-            changed = 0
+        try:
 
-            for register, value in registers.items():
+            while True:
 
-                raw = value["raw"]
+                registers = self.client.read_all()
 
-                if self.last.get(register) == raw:
+                changed = 0
 
-                    continue
+                for register, value in registers.items():
 
-                self.last[register] = raw
+                    raw = value["raw"]
 
-                self.storage.save(
+                    if self.last.get(register) == raw:
 
-                    register,
+                        continue
 
-                    raw,
+                    self.last[register] = raw
 
-                    value["signed"],
+                    self.storage.save(
 
-                    value["scaled"],
+                        register,
 
-                )
+                        raw,
 
-                print(
+                        value["signed"],
 
-                    f"R{register:03d} = "
+                        value["scaled"],
 
-                    f"{value['scaled']:.1f}"
+                    )
 
-                )
+                    if self.mqtt.connected:
+                        self.mqtt.publish_register(
+                            register,
+                            value,
+                        )
 
-                changed += 1
+                    print(
 
-            if changed:
+                        f"R{register:03d} = "
 
-                self.storage.commit()
+                        f"{value['scaled']:.1f}"
 
-            time.sleep(SCAN_INTERVAL)
+                    )
+
+                    changed += 1
+
+                if changed:
+
+                    self.storage.commit()
+
+                time.sleep(SCAN_INTERVAL)
+
+        finally:
+
+            self.mqtt.disconnect()
+
+            self.client.disconnect()
