@@ -32,7 +32,7 @@ The current mapping is maintained in `register_config.py`:
 |---|---|---|
 | R002 | Vorlauf | °C |
 | R003 | Rücklauf | °C |
-| R008 | Außentemperatur | °C |
+| R006 | Außentemperatur | °C |
 
 Additional registers can be added to the mapping when their meaning is known.
 
@@ -51,17 +51,17 @@ Register values are published below:
 ```text
 carel/monitor/register/002
 carel/monitor/register/003
-carel/monitor/register/008
+carel/monitor/register/006
 ```
 
 The payload contains the register information as JSON, for example:
 
 ```json
 {
-  "register": 8,
-  "raw": 133,
-  "signed": 133,
-  "scaled": 13.3
+  "register": 6,
+  "raw": 122,
+  "signed": 122,
+  "scaled": 12.2
 }
 ```
 
@@ -91,7 +91,7 @@ Discovery topics use the following structure:
 ```text
 homeassistant/sensor/carel_r002/config
 homeassistant/sensor/carel_r003/config
-homeassistant/sensor/carel_r008/config
+homeassistant/sensor/carel_r006/config
 ```
 
 The sensors use the CAREL Monitor device and the MQTT availability topic automatically.
