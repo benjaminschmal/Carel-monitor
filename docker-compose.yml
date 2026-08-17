@@ -17,5 +17,10 @@ services:
       WEB_HOST: 0.0.0.0
       WEB_PORT: 8000
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MQTT_HOST: ${MQTT_HOST:-}
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_BASE_TOPIC: ${MQTT_BASE_TOPIC:-carel/monitor}
     volumes:
       - ./data:/app/data
