@@ -1,6 +1,5 @@
 import logging
 import threading
-import time
 
 import uvicorn
 
@@ -43,7 +42,7 @@ def main() -> None:
     except KeyboardInterrupt:
         logger.info("CAREL Monitor stopped")
     except Exception:
-        logger.exception("CAREL Monitor stopped بسبب an unexpected error")
+        logger.exception("CAREL Monitor stopped due to an unexpected error")
         raise
 
 
