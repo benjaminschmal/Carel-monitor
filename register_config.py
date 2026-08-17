@@ -12,7 +12,7 @@ REGISTER_MAP = {
         "favorite": True,
     },
 
-    8: {
+    6: {
         "name": "Außentemperatur",
         "unit": "°C",
         "favorite": True,
