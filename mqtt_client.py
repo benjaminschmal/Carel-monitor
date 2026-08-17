@@ -5,6 +5,7 @@ from typing import Any
 import paho.mqtt.client as mqtt
 
 from mqtt_config import MqttConfig
+from register_config import REGISTER_MAP
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class MqttClient:
                 self.config.host,
                 self.config.port,
             )
+            self.publish_discovery()
             self.publish_status("online")
         else:
             self.connected = False
@@ -122,6 +124,57 @@ class MqttClient:
             f"{self.config.base_topic}/register/{register:03d}",
             payload,
             retain=True,
+        )
+
+    def publish_discovery(self) -> None:
+        """Publish Home Assistant MQTT Discovery only for configured registers."""
+        device = {
+            "identifiers": ["carel_monitor"],
+            "name": "CAREL Monitor",
+            "manufacturer": "CAREL",
+            "model": "CAREL Monitor",
+        }
+
+        availability_topic = f"{self.config.base_topic}/status"
+
+        for register, config in REGISTER_MAP.items():
+            object_id = f"carel_r{register:03d}"
+
+            discovery = {
+                "name": config["name"],
+                "unique_id": object_id,
+                "state_topic": (
+                    f"{self.config.base_topic}/register/{register:03d}"
+                ),
+                "value_template": "{{ value_json.scaled }}",
+                "availability_topic": availability_topic,
+                "payload_available": "online",
+                "payload_not_available": "offline",
+                "device": device,
+            }
+
+            unit = config.get("unit")
+            if unit:
+                discovery["unit_of_measurement"] = unit
+
+            if unit == "°C":
+                discovery["device_class"] = "temperature"
+                discovery["state_class"] = "measurement"
+
+            topic = (
+                "homeassistant/sensor/"
+                f"{object_id}/config"
+            )
+
+            self.publish(
+                topic,
+                json.dumps(discovery, separators=(",", ":")),
+                retain=True,
+            )
+
+        logger.info(
+            "Published Home Assistant MQTT Discovery for %d configured registers",
+            len(REGISTER_MAP),
         )
 
     def disconnect(self) -> None:
