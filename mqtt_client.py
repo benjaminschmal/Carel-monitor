@@ -133,6 +133,7 @@ class MqttClient:
             "name": "CAREL Monitor",
             "manufacturer": "CAREL",
             "model": "CAREL Monitor",
+            "sw_version": "CAREL Monitor 1.0",
         }
 
         availability_topic = f"{self.config.base_topic}/status"
