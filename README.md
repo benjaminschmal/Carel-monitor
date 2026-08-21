@@ -1,5 +1,7 @@
 # CAREL Monitor
 
+[![Docker Build](https://github.com/benjaminschmal/Carel-monitor/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/benjaminschmal/Carel-monitor/actions/workflows/docker-publish.yml)
+
 CAREL monitoring service for reading controller values via **Modbus TCP**, storing the values locally and publishing selected values via **MQTT**.
 
 The project also publishes **Home Assistant MQTT Discovery** configuration so mapped CAREL values appear automatically as sensors in Home Assistant.
@@ -19,6 +21,8 @@ The project also publishes **Home Assistant MQTT Discovery** configuration so ma
 - Discovery only for registers that are explicitly mapped
 - Environment-based configuration
 - Docker deployment
+- GitHub Actions Docker image build
+- GitHub Container Registry (GHCR) publishing
 
 The monitor has been tested against a real CAREL controller and deployed successfully on a QNAP NAS.
 
@@ -157,7 +161,7 @@ http://localhost:8000
 
 ## Docker image
 
-Build the image:
+Build the image locally:
 
 ```bash
 docker build -t carel-monitor:latest .
@@ -165,34 +169,112 @@ docker build -t carel-monitor:latest .
 
 The container exposes the web dashboard on port `8000`.
 
-## QNAP deployment
+## Docker Image via GitHub Container Registry
 
-The production test environment uses QNAP Container Station with a direct QNAP `qnet` network.
+The repository automatically builds and publishes the Docker image using **GitHub Actions** whenever changes are pushed to the `main` branch.
 
-The container is created directly with `docker create`, rather than as a Docker Compose application. The IP address is assigned by DHCP and the container uses a fixed MAC address so the DHCP lease can remain stable.
+The published image is available at:
 
-Example:
-
-```bash
-docker create \
-  --name carel-monitor-1 \
-  --network qnet-dhcp-bond0-6d6da6 \
-  --mac-address <container-mac> \
-  -p 8000:8000 \
-  --env-file /share/Container/Carel-monitor/.env \
-  -v /share/Container/Carel-monitor/data:/app/data \
-  carel-monitor:latest
+```text
+ghcr.io/benjaminschmal/carel-monitor:latest
 ```
 
-Then start it with:
+A second image tag containing the Git commit SHA is also published for reproducible deployments.
 
-```bash
-docker start carel-monitor-1
+The workflow is located at:
+
+```text
+.github/workflows/docker-publish.yml
 ```
 
-The real QNAP network name, MAC address, IP address and MQTT credentials are intentionally not part of the repository.
+The **Docker Build** badge at the top of this README shows the current status of this workflow. It is green when the latest workflow run succeeded and red when the build or publishing failed.
 
-The persistent `/app/data` volume keeps the SQLite database when the container is recreated.
+## QNAP Container Station – Application deployment
+
+The recommended QNAP deployment uses a **Container Station Application** based on the repository's `compose.yaml` file. This is intentionally different from creating a single standalone container.
+
+The application uses the published GHCR image:
+
+```text
+ghcr.io/benjaminschmal/carel-monitor:latest
+```
+
+The Compose configuration is stored in:
+
+```text
+compose.yaml
+```
+
+It defines:
+
+- Application service: `carel-monitor`
+- Container name: `carel-monitor-1`
+- Web dashboard: `8000:8000`
+- Persistent SQLite data: `./data:/app/data`
+- Automatic restart: `unless-stopped`
+- Container healthcheck
+- All CAREL, MQTT and web configuration as environment variables
+
+### Create the Application in QNAP Container Station
+
+In Container Station, create a new **Application** and use the repository's `compose.yaml` as the application definition.
+
+The image is pulled from GHCR; the QNAP does not need to build the Docker image locally.
+
+Before starting the application, set the installation-specific values for:
+
+```text
+CAREL_HOST
+CAREL_PORT
+CAREL_SLAVE
+CAREL_TIMEOUT
+REGISTER_START
+REGISTER_END
+SCAN_INTERVAL
+
+MQTT_HOST
+MQTT_PORT
+MQTT_USERNAME
+MQTT_PASSWORD
+MQTT_BASE_TOPIC
+
+WEB_HOST
+WEB_PORT
+LOG_LEVEL
+```
+
+The persistent data directory is mapped to `/app/data` so the SQLite database survives application/container recreation.
+
+### QNAP network configuration
+
+The repository intentionally does not contain the QNAP-specific network name, IP address, MAC address or MQTT credentials.
+
+If a fixed container IP is required, configure the QNAP `qnet` network and the fixed MAC address in Container Station for the application/container. These values are installation-specific and must not be committed to the public repository.
+
+The application architecture is:
+
+```text
+GitHub repository
+       ↓
+GitHub Actions
+       ↓
+Docker image build
+       ↓
+GitHub Container Registry (GHCR)
+       ↓
+QNAP Container Station
+       ↓
+Application
+   └── carel-monitor-1
+       ├── Web UI :8000
+       └── SQLite /app/data
+```
+
+After a new version is pushed to `main`, GitHub Actions creates and publishes a new `latest` image. The QNAP Application can then be updated by pulling the latest image and recreating the service with the same application configuration.
+
+## Security
+
+Do not expose the web interface or MQTT broker directly to the Internet. Never commit credentials, MAC addresses or other private deployment details to the public repository.
 
 ## Project structure
 
@@ -212,6 +294,7 @@ Carel-monitor/
 ├── register_config.py
 ├── requirements.txt
 ├── Dockerfile
+├── compose.yaml
 └── .env.example
 ```
 
@@ -226,11 +309,12 @@ Current implementation status:
 - MQTT publishing: working
 - Home Assistant MQTT Discovery: working
 - Docker image: working
-- QNAP deployment: successfully tested
+- GitHub Actions / GHCR publishing: configured
+- QNAP Container Station Application deployment: configured
 
 ## Development notes
 
-The project is developed and tested locally first. Deployment to the QNAP is performed separately using Docker.
+The project is developed and tested locally first. The production deployment uses the published Docker image through QNAP Container Station.
 
 Register mappings are intentionally added only when the meaning of a CAREL register is known. This prevents unknown register values from being presented as misleading Home Assistant entities.
 
