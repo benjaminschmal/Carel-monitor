@@ -189,39 +189,28 @@ The workflow is located at:
 
 The **Docker Build** badge at the top of this README shows the current status of this workflow. It is green when the latest workflow run succeeded and red when the build or publishing failed.
 
-## QNAP Container Station – Application deployment
+## QNAP Container Station – standalone container
 
-The recommended QNAP deployment uses a **Container Station Application** based on the repository's `compose.yaml` file. This is intentionally different from creating a single standalone container.
+The recommended QNAP deployment uses a **standalone Docker container**, not a Container Station Application. This matches the deployment model used by the KACO MQTT Gateway and other standalone containers.
 
-The application uses the published GHCR image:
+The container uses the published GHCR image:
 
 ```text
 ghcr.io/benjaminschmal/carel-monitor:latest
 ```
 
-The Compose configuration is stored in:
+### Create the container in QNAP Container Station
+
+In Container Station choose **Create Container** and use:
 
 ```text
-compose.yaml
+Registry: ghcr.io
+Image: ghcr.io/benjaminschmal/carel-monitor:latest
 ```
 
-It defines:
+Do not create an Application/Compose project.
 
-- Application service: `carel-monitor`
-- Container name: `carel-monitor-1`
-- Web dashboard: `8000:8000`
-- Persistent SQLite data: `./data:/app/data`
-- Automatic restart: `unless-stopped`
-- Container healthcheck
-- All CAREL, MQTT and web configuration as environment variables
-
-### Create the Application in QNAP Container Station
-
-In Container Station, create a new **Application** and use the repository's `compose.yaml` as the application definition.
-
-The image is pulled from GHCR; the QNAP does not need to build the Docker image locally.
-
-Before starting the application, set the installation-specific values for:
+Configure the container environment variables:
 
 ```text
 CAREL_HOST
@@ -243,15 +232,33 @@ WEB_PORT
 LOG_LEVEL
 ```
 
-The persistent data directory is mapped to `/app/data` so the SQLite database survives application/container recreation.
+Map the web dashboard:
+
+```text
+Container port: 8000
+```
+
+For persistent SQLite data, map a QNAP folder to:
+
+```text
+/app/data
+```
+
+For example:
+
+```text
+/share/Container/Carel-monitor/data:/app/data
+```
+
+Use `restart: unless-stopped` or the corresponding Container Station restart policy.
 
 ### QNAP network configuration
 
 The repository intentionally does not contain the QNAP-specific network name, IP address, MAC address or MQTT credentials.
 
-If a fixed container IP is required, configure the QNAP `qnet` network and the fixed MAC address in Container Station for the application/container. These values are installation-specific and must not be committed to the public repository.
+If a fixed container IP is required, configure the QNAP `qnet` network and fixed MAC address directly in Container Station. These values are installation-specific and must not be committed to the public repository.
 
-The application architecture is:
+The deployment architecture is:
 
 ```text
 GitHub repository
@@ -264,13 +271,13 @@ GitHub Container Registry (GHCR)
        ↓
 QNAP Container Station
        ↓
-Application
+Standalone container
    └── carel-monitor-1
        ├── Web UI :8000
        └── SQLite /app/data
 ```
 
-After a new version is pushed to `main`, GitHub Actions creates and publishes a new `latest` image. The QNAP Application can then be updated by pulling the latest image and recreating the service with the same application configuration.
+After a new version is pushed to `main`, GitHub Actions creates and publishes a new `latest` image. The QNAP container can then be updated by pulling the latest image and recreating the standalone container with the same configuration.
 
 ## Security
 
@@ -294,7 +301,6 @@ Carel-monitor/
 ├── register_config.py
 ├── requirements.txt
 ├── Dockerfile
-├── compose.yaml
 └── .env.example
 ```
 
@@ -310,7 +316,7 @@ Current implementation status:
 - Home Assistant MQTT Discovery: working
 - Docker image: working
 - GitHub Actions / GHCR publishing: configured
-- QNAP Container Station Application deployment: configured
+- QNAP standalone container deployment: configured
 
 ## Development notes
 
