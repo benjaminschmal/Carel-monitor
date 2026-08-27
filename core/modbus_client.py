@@ -6,6 +6,7 @@ from config import (
     MODBUS_SLAVE,
     REGISTER_START,
     REGISTER_END,
+    STATUS_REGISTER,
 )
 
 
@@ -25,6 +26,15 @@ class ModbusClient:
     def disconnect(self):
 
         self.client.close()
+
+    @staticmethod
+    def _decode(raw):
+        signed = raw if raw < 32768 else raw - 65536
+        return {
+            "raw": raw,
+            "signed": signed,
+            "scaled": signed / 10,
+        }
 
     def read_all(self):
 
@@ -51,15 +61,29 @@ class ModbusClient:
             for offset, raw in enumerate(result.registers):
 
                 register = start + offset
-
-                signed = raw if raw < 32768 else raw - 65536
-
-                registers[register] = {
-                    "raw": raw,
-                    "signed": signed,
-                    "scaled": signed / 10,
-                }
+                registers[register] = self._decode(raw)
 
             start += count
 
         return registers
+
+    def read_status(self):
+        """Read Dimplex/Weishaupt operating status from input register 30006."""
+        address = STATUS_REGISTER - 30001
+
+        result = self.client.read_input_registers(
+            address=address,
+            count=1,
+            slave=MODBUS_SLAVE,
+        )
+
+        if result.isError():
+            raise RuntimeError(result)
+
+        raw = result.registers[0]
+
+        return {
+            "register": STATUS_REGISTER,
+            "raw": raw,
+            "value": raw,
+        }
