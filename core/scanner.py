@@ -6,28 +6,23 @@ from mqtt_config import MqttConfig
 
 from core.modbus_client import ModbusClient
 from core.storage import Storage
-from web.routes import set_system_status
 
 
 class Scanner:
 
     def __init__(self):
-
         self.client = ModbusClient()
         self.storage = Storage()
         self.mqtt = MqttClient(MqttConfig.from_environment())
         self.last = {}
 
     def run(self):
-
         if not self.client.connect():
             raise RuntimeError("Keine Verbindung.")
 
         print("✅ Verbunden")
 
-        mqtt_enabled = self.mqtt.config.enabled
-
-        if mqtt_enabled:
+        if self.mqtt.config.enabled:
             if self.mqtt.connect():
                 print("📡 MQTT verbunden")
             else:
@@ -36,14 +31,6 @@ class Scanner:
         try:
             while True:
                 registers = self.client.read_all()
-
-                # R001 (Außentemperatur) must always be included in the
-                # live scan, even if REGISTER_START is overridden in the
-                # container environment. This keeps the configured favorite
-                # visible on the dashboard.
-                if 1 not in registers:
-                    registers[1] = self.client.read_register(1)
-
                 changed = 0
 
                 for register, value in registers.items():
@@ -64,23 +51,11 @@ class Scanner:
                     if self.mqtt.connected:
                         self.mqtt.publish_register(register, value)
 
-                    print(
-                        f"R{register:03d} = "
-                        f"{value['scaled']:.1f}"
-                    )
-
+                    print(f"R{register:03d} = {value['scaled']:.1f}")
                     changed += 1
 
                 if changed:
                     self.storage.commit()
-
-                # Read Dimplex/Weishaupt operating status separately from
-                # the CAREL Rxxx holding-register range.
-                try:
-                    system_status = self.client.read_status()
-                    set_system_status(system_status)
-                except Exception as exc:
-                    print(f"⚠️ Betriebsstatus 30006 nicht lesbar: {exc}")
 
                 time.sleep(SCAN_INTERVAL)
 
