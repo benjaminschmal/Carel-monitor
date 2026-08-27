@@ -37,6 +37,13 @@ class Scanner:
             while True:
                 registers = self.client.read_all()
 
+                # R001 (Außentemperatur) must always be included in the
+                # live scan, even if REGISTER_START is overridden in the
+                # container environment. This keeps the configured favorite
+                # visible on the dashboard.
+                if 1 not in registers:
+                    registers[1] = self.client.read_register(1)
+
                 changed = 0
 
                 for register, value in registers.items():
