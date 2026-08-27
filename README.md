@@ -28,23 +28,59 @@ The monitor has been tested against a real CAREL controller and deployed success
 
 ## Current CAREL register mapping
 
+The installed heat pump is a **Weishaupt WWP S 8 ID** with a Dimplex-based heat pump manager. The following CAREL holding registers have now been verified against the live installation and the Dimplex Modbus register documentation.
+
 Only registers with known information are published to Home Assistant via MQTT Discovery.
 
 The current active mapping is maintained in `register_config.py`:
 
-| Register | Name | Unit |
-|---|---|---|
-| R002 | Vorlauf | °C |
-| R003 | Rücklauf | °C |
-| R006 | Außentemperatur | °C |
+| Register | Name | Unit | Favorite |
+|---|---|---|---|
+| R001 | Außentemperatur | °C | Yes |
+| R002 | Rücklauf | °C | Yes |
+| R003 | Warmwasser | °C | Yes |
+| R005 | Vorlauf | °C | Yes |
+| R006 | Wärmequelleneintritt | °C | No |
+| R007 | Wärmequellenaustritt | °C | No |
 
-Additional registers are intentionally added only after their meaning has been established.
+### Verification
+
+A live read of R001–R007 on the installed WWP S 8 ID returned:
+
+```text
+R001 = 18.2 °C  Außentemperatur
+R002 = 22.6 °C  Rücklauf
+R003 = 40.2 °C  Warmwasser
+R004 = -8.8     unbekannt
+R005 = 23.6 °C  Vorlauf
+R006 = 23.0 °C  Wärmequelleneintritt
+R007 = 23.5 °C  Wärmequellenaustritt
+```
+
+R004 is intentionally not mapped because its meaning has not yet been established.
+
+Additional registers will be added only after their meaning has been established and, where possible, verified against the installed system.
 
 Unmapped CAREL registers continue to be read and stored by the monitor, but no Home Assistant Discovery entity is created for them.
 
-## Additional Weishaupt WWP S 8 ID register knowledge
+## Additional Weishaupt / Dimplex register knowledge
 
-The installed heat pump is a **Weishaupt WWP S 8 ID**. The repository now documents additional Weishaupt Modbus data points that are relevant for future mapping and SG-Ready investigation.
+The installed **Weishaupt WWP S 8 ID** uses a Dimplex-based heat pump manager. The Dimplex Modbus documentation provides the following temperature register structure, which matches the live CAREL register values observed on the installation:
+
+| Register | Meaning | Unit |
+|---:|---|---|
+| R001 | Außentemperatur | °C |
+| R002 | Rücklauf | °C |
+| R003 | Warmwasser | °C |
+| R005 | Vorlauf | °C |
+| R006 | Wärmequelleneintritt | °C |
+| R007 | Wärmequellenaustritt | °C |
+
+The values are represented as tenths of a degree Celsius for these temperature registers.
+
+### SG-Ready investigation
+
+The Weishaupt/Dimplex documentation also identifies SG-Ready-related data points for the heat pump manager. These are documented separately until their exact mapping to the current CAREL register space has been verified:
 
 | Modbus address | Name | Access | Status |
 |---:|---|---|---|
@@ -58,24 +94,9 @@ The installed heat pump is a **Weishaupt WWP S 8 ID**. The repository now docume
 | 42104 | Warmwasser Absenk | R/W | documented |
 | 42105 | SG-Ready Anhebung | R/W | documented; availability on the installed system still to be verified |
 
-The following status values are documented for `30006`:
+These addresses are **not automatically equivalent to CAREL Rxxx addresses**. Before any write operation is considered, the relevant data points must be verified on the installed system. The first test will remain read-only for `35101`, `35102` and `30006`.
 
-| Value | Meaning |
-|---:|---|
-| 10 | EVU-Sperre |
-| 11 | SG-Tarif |
-| 12 | SG-Maximal |
-| 14 | Erhöhter Betrieb |
-| 37 | SGR3 Heizen |
-| 39 | SGR3 Warmwasser |
-| 40 | SGR4 Heizen |
-| 42 | SGR4 Warmwasser |
-
-**Important:** These Weishaupt addresses are documented separately from the active CAREL `Rxxx` mapping. They are not automatically equivalent to CAREL holding registers.
-
-The full investigation is documented in [`docs/weishaupt-wwp-sg-ready.md`](docs/weishaupt-wwp-sg-ready.md).
-
-The next step is a **read-only test** of `35101`, `35102` and `30006` on the installed system before any write operation is considered.
+The detailed investigation is documented in [`docs/weishaupt-wwp-sg-ready.md`](docs/weishaupt-wwp-sg-ready.md).
 
 ## MQTT topics
 
@@ -88,9 +109,12 @@ carel/monitor
 Register values are published below:
 
 ```text
+carel/monitor/register/001
 carel/monitor/register/002
 carel/monitor/register/003
+carel/monitor/register/005
 carel/monitor/register/006
+carel/monitor/register/007
 ```
 
 The payload contains the register information as JSON, for example:
@@ -98,9 +122,9 @@ The payload contains the register information as JSON, for example:
 ```json
 {
   "register": 6,
-  "raw": 122,
-  "signed": 122,
-  "scaled": 12.2
+  "raw": 230,
+  "signed": 230,
+  "scaled": 23.0
 }
 ```
 
@@ -125,12 +149,15 @@ No YAML sensor definitions are required.
 
 When the monitor connects to MQTT, it publishes retained Home Assistant MQTT Discovery configuration for the registers defined in `register_config.py`.
 
-Discovery topics use the following structure:
+The active discovery topics are:
 
 ```text
+homeassistant/sensor/carel_r001/config
 homeassistant/sensor/carel_r002/config
 homeassistant/sensor/carel_r003/config
+homeassistant/sensor/carel_r005/config
 homeassistant/sensor/carel_r006/config
+homeassistant/sensor/carel_r007/config
 ```
 
 The sensors use the CAREL Monitor device and the MQTT availability topic automatically.
@@ -353,7 +380,7 @@ Current implementation status:
 - Docker image: working
 - GitHub Actions / GHCR publishing: configured
 - QNAP standalone container deployment: configured
-- Weishaupt WWP S 8 ID register reference: documented
+- WWP S 8 ID / Dimplex register mapping: verified for R001–R007 except R004
 - SG-Ready Modbus investigation: in progress
 
 ## Development notes
