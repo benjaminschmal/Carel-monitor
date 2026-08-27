@@ -36,6 +36,19 @@ class ModbusClient:
             "scaled": signed / 10,
         }
 
+    def read_register(self, register):
+        """Read one CAREL holding register using its Rxxx register number."""
+        result = self.client.read_holding_registers(
+            address=register,
+            count=1,
+            slave=MODBUS_SLAVE,
+        )
+
+        if result.isError():
+            raise RuntimeError(result)
+
+        return self._decode(result.registers[0])
+
     def read_all(self):
 
         registers = {}
