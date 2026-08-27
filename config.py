@@ -13,7 +13,18 @@ MODBUS_TIMEOUT = float(os.getenv("CAREL_TIMEOUT", "3"))
 REGISTER_START = int(os.getenv("REGISTER_START", "2"))
 REGISTER_END = int(os.getenv("REGISTER_END", "209"))
 
+# Dimplex/Weishaupt system operating status (Modbus input register 30006).
+# Kept separate from the CAREL Rxxx holding-register scan.
+STATUS_REGISTER = int(os.getenv("STATUS_REGISTER", "30006"))
+
 SCAN_INTERVAL = float(os.getenv("SCAN_INTERVAL", "5"))
+
+# ------------------------------------------------------------
+# Device information
+# ------------------------------------------------------------
+
+DEVICE_MODEL = "Weishaupt WWP S 8 ID"
+DEVICE_TECHNOLOGY = "Dimplex Wärmepumpenmanager"
 
 # ------------------------------------------------------------
 # Projektpfade
