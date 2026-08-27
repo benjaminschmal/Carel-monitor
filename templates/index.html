@@ -13,7 +13,21 @@
             <h1>CAREL Monitor</h1>
             <div id="status">Verbinde...</div>
         </div>
+
+        <div class="device-info">
+            <div class="device-model-label">Modell</div>
+            <div id="device-model" class="device-model">–</div>
+            <div id="device-technology" class="device-technology">–</div>
+        </div>
     </header>
+
+    <section class="system-status">
+        <div class="system-status-icon">⚙️</div>
+        <div>
+            <div class="system-status-label">Aktueller Betriebsmodus (30006)</div>
+            <div id="system-mode" class="system-status-mode">Wird gelesen …</div>
+        </div>
+    </section>
 
     <section>
         <h2>⭐ Favoriten</h2>
@@ -72,7 +86,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>30006</td><td>Betriebsstatusanzeige</td><td>R</td><td>Dokumentiert</td></tr>
+                <tr><td>30006</td><td>Betriebsstatusanzeige</td><td>R</td><td>✓ aktiv ausgelesen</td></tr>
                 <tr><td>35101</td><td>SG-Ready 1</td><td>R</td><td>Read-only Test ausstehend</td></tr>
                 <tr><td>35102</td><td>SG-Ready 2</td><td>R</td><td>Read-only Test ausstehend</td></tr>
                 <tr><td>40001</td><td>Systembetriebsart</td><td>R/W</td><td>Dokumentiert</td></tr>
