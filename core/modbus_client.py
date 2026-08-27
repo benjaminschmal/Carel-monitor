@@ -6,25 +6,21 @@ from config import (
     MODBUS_SLAVE,
     REGISTER_START,
     REGISTER_END,
-    STATUS_REGISTER,
 )
 
 
 class ModbusClient:
 
     def __init__(self):
-
         self.client = ModbusTcpClient(
             host=MODBUS_HOST,
             port=MODBUS_PORT,
         )
 
     def connect(self):
-
         return self.client.connect()
 
     def disconnect(self):
-
         self.client.close()
 
     @staticmethod
@@ -37,8 +33,8 @@ class ModbusClient:
         }
 
     def read_register(self, register):
-        """Read one CAREL holding register using its Rxxx register number."""
-        result = self.client.read_holding_registers(
+        """Read one CAREL register from the input-register space (FC4)."""
+        result = self.client.read_input_registers(
             address=register,
             count=1,
             slave=MODBUS_SLAVE,
@@ -50,19 +46,19 @@ class ModbusClient:
         return self._decode(result.registers[0])
 
     def read_all(self):
+        """Read the configured CAREL input-register range (FC4).
 
+        The Dimplex-based controller exposes the useful register space at
+        R001...R209. The documented 300xx addresses are kept as documentation
+        references; they are not passed directly to the controller.
+        """
         registers = {}
-
         start = REGISTER_START
 
         while start <= REGISTER_END:
+            count = min(125, REGISTER_END - start + 1)
 
-            count = min(
-                125,
-                REGISTER_END - start + 1,
-            )
-
-            result = self.client.read_holding_registers(
+            result = self.client.read_input_registers(
                 address=start,
                 count=count,
                 slave=MODBUS_SLAVE,
@@ -72,31 +68,9 @@ class ModbusClient:
                 raise RuntimeError(result)
 
             for offset, raw in enumerate(result.registers):
-
                 register = start + offset
                 registers[register] = self._decode(raw)
 
             start += count
 
         return registers
-
-    def read_status(self):
-        """Read Dimplex/Weishaupt operating status from input register 30006."""
-        address = STATUS_REGISTER - 30001
-
-        result = self.client.read_input_registers(
-            address=address,
-            count=1,
-            slave=MODBUS_SLAVE,
-        )
-
-        if result.isError():
-            raise RuntimeError(result)
-
-        raw = result.registers[0]
-
-        return {
-            "register": STATUS_REGISTER,
-            "raw": raw,
-            "value": raw,
-        }
