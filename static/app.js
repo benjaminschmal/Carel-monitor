@@ -1,5 +1,5 @@
 async function fetchJson(url) {
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) {
         throw new Error(`${url}: HTTP ${response.status}`);
     }
@@ -21,8 +21,13 @@ async function refresh() {
         document.getElementById("device-technology").textContent =
             `Technik: ${device.technology}`;
 
-        document.getElementById("system-mode").textContent =
-            `${system.raw ?? "–"} – ${system.mode}`;
+        const mode = system.raw === null || system.raw === undefined
+            ? "Nicht verfügbar"
+            : `${system.raw} – ${system.mode}`;
+
+        document.getElementById("system-mode").textContent = mode;
+        document.getElementById("system-status-detail").textContent =
+            `Betriebsstatusanzeige · Rohwert ${system.raw ?? "–"}`;
 
         renderFavorites(registers);
         renderTable(registers);
@@ -62,11 +67,18 @@ function renderTable(registers) {
     registers
         .sort((a, b) => a.register - b.register)
         .forEach(r => {
+            const description = r.description || r.name;
+            const unit = r.unit || "–";
+            const value = Number(r.scaled).toFixed(1);
+
             tbody.innerHTML += `
                 <tr>
                     <td>R${String(r.register).padStart(3, "0")}</td>
                     <td>${r.name}</td>
-                    <td>${Number(r.scaled).toFixed(1)} ${r.unit}</td>
+                    <td>${description}</td>
+                    <td>${value}</td>
+                    <td>${unit}</td>
+                    <td>${r.raw}</td>
                 </tr>
             `;
         });
