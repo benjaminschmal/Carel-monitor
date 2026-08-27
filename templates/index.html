@@ -1,74 +1,93 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>CAREL Monitor</title>
-
     <link rel="stylesheet" href="/static/style.css">
-
 </head>
-
 <body>
-
 <div class="container">
-
     <header>
-
         <div>
-
             <h1>CAREL Monitor</h1>
-
             <div id="status">Verbinde...</div>
-
         </div>
-
     </header>
 
     <section>
-
         <h2>⭐ Favoriten</h2>
-
         <div id="favorites"></div>
-
     </section>
 
     <section>
-
         <h2>📋 Alle Register</h2>
-
         <table id="registers">
-
             <thead>
-
                 <tr>
-
                     <th style="width:120px;">Register</th>
-
                     <th>Name</th>
-
                     <th style="width:180px;">Wert</th>
-
                 </tr>
-
             </thead>
-
-            <tbody>
-
-            </tbody>
-
+            <tbody></tbody>
         </table>
-
     </section>
 
+    <section>
+        <h2>🔎 Weitere bekannte Register – Weishaupt WWP S 8 ID</h2>
+        <p class="section-note">
+            Diese Datenpunkte stammen aus der Weishaupt-Modbus-Dokumentation und der alten
+            Home-Assistant-Konfiguration. Sie sind Referenzinformationen und noch nicht als
+            aktive CAREL-Rxxx-Register gemappt.
+        </p>
+
+        <table class="reference-table">
+            <thead>
+                <tr>
+                    <th>Modbus-Adresse</th>
+                    <th>Bezeichnung</th>
+                    <th>Zugriff</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>30006</td><td>Betriebsstatusanzeige</td><td>R</td><td>Dokumentiert</td></tr>
+                <tr><td>35101</td><td>SG-Ready 1</td><td>R</td><td>Dokumentiert</td></tr>
+                <tr><td>35102</td><td>SG-Ready 2</td><td>R</td><td>Dokumentiert</td></tr>
+                <tr><td>40001</td><td>Systembetriebsart</td><td>R/W</td><td>Dokumentiert</td></tr>
+                <tr><td>40002</td><td>SollwertPV</td><td>R/W</td><td>Dokumentiert</td></tr>
+                <tr><td>42102</td><td>Warmwasser Push</td><td>R/W</td><td>Dokumentiert</td></tr>
+                <tr><td>42103</td><td>Warmwasser Normal</td><td>R/W</td><td>Dokumentiert</td></tr>
+                <tr><td>42104</td><td>Warmwasser Absenk</td><td>R/W</td><td>Dokumentiert</td></tr>
+                <tr><td>42105</td><td>SG-Ready Anhebung</td><td>R/W</td><td>Dokumentiert – an Anlage noch prüfen</td></tr>
+            </tbody>
+        </table>
+
+        <h3>SG-Ready Statuscodes</h3>
+        <table class="reference-table">
+            <thead>
+                <tr><th>Wert</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>10</td><td>EVU-Sperre</td></tr>
+                <tr><td>11</td><td>SG-Tarif</td></tr>
+                <tr><td>12</td><td>SG-Maximal</td></tr>
+                <tr><td>14</td><td>Erhöhter Betrieb</td></tr>
+                <tr><td>37</td><td>SGR3 Heizen</td></tr>
+                <tr><td>39</td><td>SGR3 Warmwasser</td></tr>
+                <tr><td>40</td><td>SGR4 Heizen</td></tr>
+                <tr><td>42</td><td>SGR4 Warmwasser</td></tr>
+            </tbody>
+        </table>
+
+        <p class="section-note">
+            Aktives CAREL-Mapping: R002 Vorlauf, R003 Rücklauf, R006 Außentemperatur.
+            Die Weishaupt-Adressen oben werden bewusst getrennt geführt, bis ihre Abbildung
+            im aktuellen CAREL-Modbus-Registerbereich bestätigt ist.
+        </p>
+    </section>
 </div>
-
 <script src="/static/app.js"></script>
-
 </body>
-
 </html>
