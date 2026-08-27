@@ -10,7 +10,7 @@ MODBUS_PORT = int(os.getenv("CAREL_PORT", "502"))
 MODBUS_SLAVE = int(os.getenv("CAREL_SLAVE", "1"))
 MODBUS_TIMEOUT = float(os.getenv("CAREL_TIMEOUT", "3"))
 
-REGISTER_START = int(os.getenv("REGISTER_START", "2"))
+REGISTER_START = int(os.getenv("REGISTER_START", "1"))
 REGISTER_END = int(os.getenv("REGISTER_END", "209"))
 
 # Dimplex/Weishaupt system operating status (Modbus input register 30006).
