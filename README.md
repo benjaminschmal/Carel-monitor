@@ -14,6 +14,8 @@ The project also publishes **Home Assistant MQTT Discovery** configuration so ma
 - Configurable scaling of register values
 - Current values and historical values stored in SQLite
 - Web dashboard with register overview
+- Device model and technology information in the dashboard
+- Live Dimplex/Weishaupt operating mode display
 - Configurable register mapping and names
 - MQTT publishing of changed register values
 - MQTT availability status (`online` / `offline`)
@@ -42,6 +44,8 @@ The current active mapping is maintained in `register_config.py`:
 | R005 | Vorlauf | °C | Yes |
 | R006 | Wärmequelleneintritt | °C | No |
 | R007 | Wärmequellenaustritt | °C | No |
+
+The register scan now starts at **R001** so the outdoor temperature is included in the live dashboard and MQTT data.
 
 ### Verification
 
@@ -78,15 +82,27 @@ The installed **Weishaupt WWP S 8 ID** uses a Dimplex-based heat pump manager. T
 
 The values are represented as tenths of a degree Celsius for these temperature registers.
 
+### Betriebsstatus / aktueller Betriebsmodus
+
+The Dimplex/Weishaupt documentation identifies **Modbus input register 30006 – Betriebsstatusanzeige**. The CAREL Monitor now reads this data point separately from the Rxxx holding-register scan and displays the current status on the web dashboard.
+
+The currently verified value is:
+
+```text
+30006 = 2 → Normalbetrieb
+```
+
+Only confirmed status meanings are decoded. Unknown values are displayed as their raw status number rather than being guessed.
+
 ### SG-Ready investigation
 
 The Weishaupt/Dimplex documentation also identifies SG-Ready-related data points for the heat pump manager. These are documented separately until their exact mapping to the current CAREL register space has been verified:
 
 | Modbus address | Name | Access | Status |
 |---:|---|---|---|
-| 30006 | Betriebsstatusanzeige | R | documented |
-| 35101 | SG-Ready 1 | R | documented |
-| 35102 | SG-Ready 2 | R | documented |
+| 30006 | Betriebsstatusanzeige | R | active read |
+| 35101 | SG-Ready 1 | R | documented; read-only test pending |
+| 35102 | SG-Ready 2 | R | documented; read-only test pending |
 | 40001 | Systembetriebsart | R/W | documented |
 | 40002 | SollwertPV | R/W | documented |
 | 42102 | Warmwasser Push | R/W | documented |
@@ -97,6 +113,20 @@ The Weishaupt/Dimplex documentation also identifies SG-Ready-related data points
 These addresses are **not automatically equivalent to CAREL Rxxx addresses**. Before any write operation is considered, the relevant data points must be verified on the installed system. The first test will remain read-only for `35101`, `35102` and `30006`.
 
 The detailed investigation is documented in [`docs/weishaupt-wwp-sg-ready.md`](docs/weishaupt-wwp-sg-ready.md).
+
+## Web dashboard
+
+The dashboard displays:
+
+- CAREL Monitor online status and scanned register count
+- **Model: Weishaupt WWP S 8 ID**
+- **Technology: Dimplex heat pump manager**
+- **Current operating mode from Modbus 30006**
+- Favorite temperatures
+- All scanned CAREL registers
+- Dimplex/Weishaupt register mapping and SG-Ready documentation
+
+The dashboard automatically refreshes every 5 seconds.
 
 ## MQTT topics
 
@@ -172,8 +202,9 @@ The CAREL controller connection is configured via environment variables:
 - `CAREL_PORT`
 - `CAREL_SLAVE`
 - `CAREL_TIMEOUT`
-- `REGISTER_START`
+- `REGISTER_START` (default `1`)
 - `REGISTER_END`
+- `STATUS_REGISTER` (default `30006`)
 - `SCAN_INTERVAL`
 
 MQTT is configured via:
@@ -281,6 +312,7 @@ CAREL_SLAVE
 CAREL_TIMEOUT
 REGISTER_START
 REGISTER_END
+STATUS_REGISTER
 SCAN_INTERVAL
 
 MQTT_HOST
@@ -373,8 +405,11 @@ Current implementation status:
 
 - Modbus TCP: working
 - Register scanning: working
+- R001 outdoor temperature included: fixed
 - SQLite storage: working
 - Web dashboard: working
+- Device model display: implemented
+- Live Dimplex operating status 30006: implemented; value 2 verified as Normalbetrieb
 - MQTT publishing: working
 - Home Assistant MQTT Discovery: working
 - Docker image: working
