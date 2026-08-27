@@ -26,11 +26,11 @@ The project also publishes **Home Assistant MQTT Discovery** configuration so ma
 
 The monitor has been tested against a real CAREL controller and deployed successfully on a QNAP NAS.
 
-## Current register mapping
+## Current CAREL register mapping
 
 Only registers with known information are published to Home Assistant via MQTT Discovery.
 
-The current mapping is maintained in `register_config.py`:
+The current active mapping is maintained in `register_config.py`:
 
 | Register | Name | Unit |
 |---|---|---|
@@ -38,9 +38,44 @@ The current mapping is maintained in `register_config.py`:
 | R003 | Rücklauf | °C |
 | R006 | Außentemperatur | °C |
 
-Additional registers can be added to the mapping when their meaning is known.
+Additional registers are intentionally added only after their meaning has been established.
 
-Unmapped registers continue to be read and stored by the monitor, but no Home Assistant Discovery entity is created for them.
+Unmapped CAREL registers continue to be read and stored by the monitor, but no Home Assistant Discovery entity is created for them.
+
+## Additional Weishaupt WWP S 8 ID register knowledge
+
+The installed heat pump is a **Weishaupt WWP S 8 ID**. The repository now documents additional Weishaupt Modbus data points that are relevant for future mapping and SG-Ready investigation.
+
+| Modbus address | Name | Access | Status |
+|---:|---|---|---|
+| 30006 | Betriebsstatusanzeige | R | documented |
+| 35101 | SG-Ready 1 | R | documented |
+| 35102 | SG-Ready 2 | R | documented |
+| 40001 | Systembetriebsart | R/W | documented |
+| 40002 | SollwertPV | R/W | documented |
+| 42102 | Warmwasser Push | R/W | documented |
+| 42103 | Warmwasser Normal | R/W | documented |
+| 42104 | Warmwasser Absenk | R/W | documented |
+| 42105 | SG-Ready Anhebung | R/W | documented; availability on the installed system still to be verified |
+
+The following status values are documented for `30006`:
+
+| Value | Meaning |
+|---:|---|
+| 10 | EVU-Sperre |
+| 11 | SG-Tarif |
+| 12 | SG-Maximal |
+| 14 | Erhöhter Betrieb |
+| 37 | SGR3 Heizen |
+| 39 | SGR3 Warmwasser |
+| 40 | SGR4 Heizen |
+| 42 | SGR4 Warmwasser |
+
+**Important:** These Weishaupt addresses are documented separately from the active CAREL `Rxxx` mapping. They are not automatically equivalent to CAREL holding registers.
+
+The full investigation is documented in [`docs/weishaupt-wwp-sg-ready.md`](docs/weishaupt-wwp-sg-ready.md).
+
+The next step is a **read-only test** of `35101`, `35102` and `30006` on the installed system before any write operation is considered.
 
 ## MQTT topics
 
@@ -292,6 +327,7 @@ Carel-monitor/
 ├── templates/
 ├── test/
 ├── data/
+├── docs/
 ├── app.py
 ├── config.py
 ├── database.py
@@ -317,6 +353,8 @@ Current implementation status:
 - Docker image: working
 - GitHub Actions / GHCR publishing: configured
 - QNAP standalone container deployment: configured
+- Weishaupt WWP S 8 ID register reference: documented
+- SG-Ready Modbus investigation: in progress
 
 ## Development notes
 
