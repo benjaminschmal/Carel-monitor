@@ -19,8 +19,9 @@ body {
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 35px;
+    align-items: flex-start;
+    gap: 25px;
+    margin-bottom: 25px;
 }
 
 h1 {
@@ -43,6 +44,56 @@ h3 {
 #status {
     color: #6c757d;
     font-size: 15px;
+}
+
+.device-info,
+.system-status {
+    background: white;
+    border: 1px solid #dce3eb;
+    border-radius: 14px;
+    box-shadow: 0 5px 15px rgba(0,0,0,.05);
+}
+
+.device-info {
+    min-width: 330px;
+    padding: 16px 20px;
+}
+
+.device-model-label,
+.system-status-label {
+    color: #6c757d;
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.device-model {
+    color: #1976d2;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.device-technology {
+    margin-top: 4px;
+    color: #536273;
+    font-size: 14px;
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    margin-bottom: 10px;
+}
+
+.system-status-icon {
+    font-size: 27px;
+}
+
+.system-status-mode {
+    color: #1976d2;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .section-note {
@@ -151,6 +202,15 @@ td:last-child {
 @media (max-width: 800px) {
     .container {
         padding: 15px;
+    }
+
+    header {
+        flex-direction: column;
+    }
+
+    .device-info {
+        width: 100%;
+        min-width: 0;
     }
 
     .card-value {
